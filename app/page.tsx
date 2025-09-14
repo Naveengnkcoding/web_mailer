@@ -36,11 +36,11 @@ export default function MailIframeManager() {
   // Mock HTML files - in a real app, this would fetch from your source folder
   useEffect(() => {
     const mockFiles: HtmlFile[] = [
-      { name: "index.html", path: "/index.html", url: `${window.location.origin}/index.html` },
-      { name: "about.html", path: "/about.html", url: `${window.location.origin}/about.html` },
-      { name: "contact.html", path: "/contact.html", url: `${window.location.origin}/contact.html` },
-      { name: "services.html", path: "/services.html", url: `${window.location.origin}/services.html` },
-      { name: "portfolio.html", path: "/portfolio.html", url: `${window.location.origin}/portfolio.html` },
+      { name: "HAB_Launch", path: "/content/balloon.html", url: `${window.location.origin}/content/index.html` },
+      { name: "HAB Final", path: "/content/HAB.html", url: `${window.location.origin}/content/about.html` },
+      { name: "Iframe", path: "/content/iframe.html", url: `${window.location.origin}/content/contact.html` },
+      { name: "Template", path: "/content/temp2.html", url: `${window.location.origin}/content/services.html` },
+      { name: "Offers", path: "/content/portfolio.html", url: `${window.location.origin}/content/portfolio.html` },
     ]
     setHtmlFiles(mockFiles)
   }, [])
@@ -158,7 +158,7 @@ export default function MailIframeManager() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-foreground">Mail & Iframe Manager</h1>
+          <h1 className="text-4xl font-bold text-foreground">WEB Mailer & Manager</h1>
           <p className="text-muted-foreground">Send emails, generate iframes, and manage HTML files</p>
         </div>
 
