@@ -32,6 +32,10 @@ export default function MailIframeManager() {
   const [consoleOutput, setConsoleOutput] = useState<string[]>([])
   const [htmlFiles, setHtmlFiles] = useState<HtmlFile[]>([])
   const { toast } = useToast()
+  // // 1. Locate folder
+  // const htmlDir = path.join(process.cwd(), "public", "content");
+  // // 2. Read files
+  // const files = fs.readdirSync(htmlDir).filter(f => f.endsWith(".html"));
 
   // Mock HTML files - in a real app, this would fetch from your source folder
   useEffect(() => {
@@ -44,6 +48,26 @@ export default function MailIframeManager() {
     ]
     setHtmlFiles(mockFiles)
   }, [])
+  // useEffect(() => {
+  //   const htmlFileObjects: HtmlFile[] = files.map((file) => ({
+  //     name: file,
+  //     path: `/content/${file}`,
+  //     url: `${window.location.origin}/content/${file}`,
+  //   }))
+  //   setHtmlFiles(htmlFileObjects)
+  // }, [])
+
+  useEffect(() => {
+    fetch("/api/list-html")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.files) {
+          setHtmlFiles(data.files);
+          console.log("Fetched HTML files:", data.files);
+        }
+      })
+      .catch((err) => console.error("Error fetching files:", err));
+  }, []);
 
   const addRecipient = () => {
     const newRecipient: EmailRecipient = {
@@ -330,7 +354,8 @@ export default function MailIframeManager() {
               {htmlFiles.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="cursor-pointer flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  onClick={() => window.open(file.url, "_blank")}
                 >
                   <div className="flex items-center gap-3">
                     <FileText className="h-4 w-4 text-muted-foreground" />
@@ -341,7 +366,7 @@ export default function MailIframeManager() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">{file.name.split(".").pop()}</Badge>
-                    <Button size="sm" variant="outline" onClick={() => copyToClipboard(file.url, "File URL")}>
+                    <Button className="cursor-pointer" size="sm" variant="outline" onClick={() => copyToClipboard(file.url, "File URL")}>
                       <Copy className="h-4 w-4 mr-1" />
                       Copy URL
                     </Button>
