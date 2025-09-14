@@ -97,7 +97,7 @@ export default function MailIframeManager() {
       return
     }
 
-    const iframe = `<iframe src="${iframeUrl}" width="100%" height="400" frameborder="0" allowfullscreen></iframe>`
+    const iframe = `<iframe src="${iframeUrl}" allowfullscreen></iframe>`
     setGeneratedIframe(iframe)
 
     const output = `Generated iframe for: ${iframeUrl}`
