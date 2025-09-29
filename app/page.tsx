@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Copy, Plus, Trash2, Send, Code, FileText, Link } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import LocationGenerator from "@/components/generator"
 
 interface EmailRecipient {
   id: string
@@ -312,6 +313,9 @@ export default function MailIframeManager() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Location Generator Section */}
+        <LocationGenerator />
 
         {/* Console Section */}
         <Card>

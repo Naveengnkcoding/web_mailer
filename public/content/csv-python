@@ -1,0 +1,159 @@
+import csv
+from datetime import datetime, timedelta
+import random
+import math
+
+# Define the flight simulation parameters
+start_time_utc = datetime(2025, 9, 29, 5, 0, 0)
+max_altitude_m = 1000  # Target maximum altitude for the balloon
+ascent_rate_ms = 5     # Typical ascent rate in meters/second
+descent_rate_ms = 10   # Typical descent rate after burst in meters/second
+payload_drop_altitude = 990 # Altitude at which parachute deploys
+
+# Initial conditions (ground level)
+initial_lat = 11.0855  # Example: Latitude near Tiruppur
+initial_lon = 77.3486  # Example: Longitude near Tiruppur
+initial_temp = 25      # degrees Celsius
+initial_pressure = 101325  # Pascals (Standard Atmospheric Pressure)
+
+# Functions to simulate flight parameters
+def simulate_temperature(altitude):
+    # Standard lapse rate is approximately -6.5°C per 1000m
+    return initial_temp - (altitude / 1000) * 6.5 + random.uniform(-0.2, 0.2)
+
+def simulate_pressure(altitude):
+    # Barometric formula for pressure variation with altitude
+    # Note: Using a simplified model. For true accuracy, consider temperature gradient.
+    # p = p0 * (1 - (L*h)/T0)^(g*M)/(R*L)
+    # where L is standard temp lapse rate, M is molar mass of air, R is gas constant
+    return initial_pressure * (1 - altitude / 44330)**5.255 + random.uniform(-50, 50)
+
+def simulate_humidity(altitude):
+    # Humidity generally decreases with altitude, especially in the troposphere
+    if altitude < 1000:
+        return 60 * math.exp(-altitude / 500) + random.uniform(-1, 1)
+    else:
+        return 10 * math.exp(-(altitude-1000) / 1000) + random.uniform(-0.5, 0.5)
+
+def simulate_side_velocity():
+    # Simulate random wind effects, changing over time
+    return random.uniform(-5, 5)
+
+def simulate_coordinates(current_lat, current_lon, side_vel_mps):
+    # Simplified coordinate drift calculation based on side velocity
+    # 1 degree of latitude is approx. 111,139 meters
+    # 1 degree of longitude is approx. 111,139 * cos(latitude)
+    lat_change = (side_vel_mps / 111139) * random.uniform(0.5, 1.5)
+    lon_change = (side_vel_mps / (111139 * math.cos(math.radians(current_lat)))) * random.uniform(0.5, 1.5)
+    return current_lat + lat_change, current_lon + lon_change
+
+def generate_flight_data():
+    data = []
+    current_time_utc = start_time_utc
+    elapsed_time = 0
+    current_lat = initial_lat
+    current_lon = initial_lon
+    
+    # Ascent Phase
+    current_altitude = 0
+    while current_altitude < max_altitude_m:
+        vertical_velocity = ascent_rate_ms + random.uniform(-0.5, 0.5)
+        current_altitude += vertical_velocity
+        elapsed_time += 1
+        current_time_utc += timedelta(seconds=1)
+        
+        # Clamp altitude to max
+        if current_altitude > max_altitude_m:
+            current_altitude = max_altitude_m
+        
+        side_velocity = simulate_side_velocity()
+        current_lat, current_lon = simulate_coordinates(current_lat, current_lon, side_velocity)
+        
+        data.append({
+            "time_utc": current_time_utc.strftime("%Y-%m-%d %H:%M:%S"),
+            "elapsed_time": elapsed_time,
+            "temp_C": simulate_temperature(current_altitude),
+            "pressure_Pa": simulate_pressure(current_altitude),
+            "humidity_pc": simulate_humidity(current_altitude),
+            "altitude_m": round(current_altitude, 2),
+            "lat": round(current_lat, 6),
+            "long": round(current_lon, 6),
+            "stage": "Ascending",
+            "vertical_velocity_ms": round(vertical_velocity, 2),
+            "side_velocity_ms": round(side_velocity, 2),
+        })
+    
+    # Burst and Descent Phase (parachuted)
+    # The balloon bursts and the payload begins its descent
+    current_altitude = max_altitude_m
+    while current_altitude > 0:
+        if current_altitude > payload_drop_altitude:
+            # High speed fall before parachute slows it
+            vertical_velocity = -1 * (descent_rate_ms + random.uniform(5, 10))
+            stage = "Falling"
+        else:
+            # Slower, controlled descent with parachute
+            vertical_velocity = -1 * (descent_rate_ms + random.uniform(-2, 2))
+            stage = "Parachute Descent"
+        
+        current_altitude += vertical_velocity
+        elapsed_time += 1
+        current_time_utc += timedelta(seconds=1)
+        
+        # Clamp altitude at 0
+        if current_altitude < 0:
+            current_altitude = 0
+            
+        side_velocity = simulate_side_velocity()
+        current_lat, current_lon = simulate_coordinates(current_lat, current_lon, side_velocity)
+        
+        data.append({
+            "time_utc": current_time_utc.strftime("%Y-%m-%d %H:%M:%S"),
+            "elapsed_time": elapsed_time,
+            "temp_C": simulate_temperature(current_altitude),
+            "pressure_Pa": simulate_pressure(current_altitude),
+            "humidity_pc": simulate_humidity(current_altitude),
+            "altitude_m": round(current_altitude, 2),
+            "lat": round(current_lat, 6),
+            "long": round(current_lon, 6),
+            "stage": stage,
+            "vertical_velocity_ms": round(vertical_velocity, 2),
+            "side_velocity_ms": round(side_velocity, 2),
+        })
+
+    # Landed logs (simulate 10 seconds of grounded data)
+    for _ in range(10):
+        elapsed_time += 1
+        current_time_utc += timedelta(seconds=1)
+        
+        data.append({
+            "time_utc": current_time_utc.strftime("%Y-%m-%d %H:%M:%S"),
+            "elapsed_time": elapsed_time,
+            "temp_C": initial_temp + random.uniform(-0.1, 0.1),
+            "pressure_Pa": initial_pressure + random.uniform(-10, 10),
+            "humidity_pc": 60 + random.uniform(-0.5, 0.5),
+            "altitude_m": 0,
+            "lat": round(current_lat, 6),
+            "long": round(current_lon, 6),
+            "stage": "Landed",
+            "vertical_velocity_ms": 0,
+            "side_velocity_ms": 0,
+        })
+    
+    return data
+
+def create_csv_file(filename, data):
+    with open(filename, 'w', newline='') as csvfile:
+        fieldnames = [
+            "time_utc", "elapsed_time", "temp_C", "pressure_Pa", "humidity_pc",
+            "altitude_m", "lat", "long", "stage", "vertical_velocity_ms", "side_velocity_ms"
+        ]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        
+        writer.writeheader()
+        writer.writerows(data)
+
+# Generate and save the file
+flight_data = generate_flight_data()
+create_csv_file("weather_balloon_log.csv", flight_data)
+print("weather_balloon_log.csv has been created.")
