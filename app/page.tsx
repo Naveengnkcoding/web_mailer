@@ -10,6 +10,17 @@ import { Badge } from "@/components/ui/badge"
 import { Copy, Plus, Trash2, Send, Code, FileText, Link } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import LocationGenerator from "@/components/generator"
+import Navbar from '@/components/Navbar';import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface EmailRecipient {
   id: string
@@ -33,6 +44,8 @@ export default function MailIframeManager() {
   const [consoleOutput, setConsoleOutput] = useState<string[]>([])
   const [htmlFiles, setHtmlFiles] = useState<HtmlFile[]>([])
   const { toast } = useToast()
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   // // 1. Locate folder
   // const htmlDir = path.join(process.cwd(), "public", "content");
   // // 2. Read files
@@ -69,6 +82,24 @@ export default function MailIframeManager() {
       })
       .catch((err) => console.error("Error fetching files:", err));
   }, []);
+  // const transporter = nodemailer.createTransport({
+  //     service: 'gmail', // You can use 'gmail' directly
+  //     auth: {
+  //       user: loginEmail, // Your Gmail address
+  //       pass: loginPassword,   // The 16-character App Password you generated
+  //       },
+  //   });
+  // const nodemailer = require("nodemailer");
+  // useEffect(() => {
+  //   const transporter = nodemailer.createTransport({
+  //     service: 'gmail', // You can use 'gmail' directly
+  //     auth: {
+  //       user: loginEmail, // Your Gmail address
+  //       pass: loginPassword,   // The 16-character App Password you generated
+  //       },
+  //   });
+  // }, [loginEmail,loginPassword]);
+  
 
   const addRecipient = () => {
     const newRecipient: EmailRecipient = {
@@ -163,6 +194,22 @@ export default function MailIframeManager() {
       content: contentType === "text" ? emailContent : htmlContent,
       type: contentType,
     }
+//   const mailOptions = {
+//     from: fromEmail, // Sender address
+//     to: validRecipients.map((r) => r.email),  // List of receivers
+//     subject: 'Test Email from Nodemailer', // Subject line
+//     text: contentType === "text" ? emailContent : '', // Plain text body
+//     html: contentType === "text" ? '' : htmlContent, // HTML body (optional)
+//   };
+
+// // Send the email
+//     transporter.sendMail(mailOptions, (error, info) => {
+//       if (error) {
+//         console.log('Error sending email:', error);
+//       } else {
+//         console.log('Email sent: ' + info.response);
+//       }
+//     });
 
     console.log("Sending email:", emailData)
 
@@ -179,14 +226,66 @@ export default function MailIframeManager() {
     setConsoleOutput([])
   }
 
+  const handleLogin = () => {
+    // Here you would typically handle the login logic,
+    // such as sending the email and password to your authentication service.
+    console.log("Login Email:", loginEmail);
+    console.log("Login Password:", loginPassword);
+    // After successful login, you might want to update the UI or redirect the user.
+  };
+
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="max-w-7xl mx-auto space-y-6 mt-5">
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold text-foreground">WEB Mailer & Manager</h1>
           <p className="text-muted-foreground">Send emails, generate iframes, and manage HTML files</p>
         </div>
-
+        {/* Login Popup */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline">Login</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Login</AlertDialogTitle>
+              <AlertDialogDescription>
+                Enter your email and password to log in.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="email" className="text-right">
+                  Email
+                </label>
+                <Input
+                  id="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="password" className="text-right">
+                  Password
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleLogin}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+    {/* Login Popup end  */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Email Section */}
           <Card>
@@ -251,9 +350,12 @@ export default function MailIframeManager() {
                   <Textarea
                     placeholder="Paste your HTML content here..."
                     value={htmlContent}
-                    onChange={(e) => setHtmlContent(e.target.value)}
+                    onChange={(e) => {
+                      setHtmlContent(e.target.value);
+                      setGeneratedIframe(e.target.value);
+                    }}
                     rows={6}
-                    className="font-mono text-sm"
+                    className="font-mono text-sm max-h-100 overflow-y-scroll"
                   />
                 </TabsContent>
               </Tabs>
@@ -270,11 +372,11 @@ export default function MailIframeManager() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Code className="h-5 w-5" />
-                Iframe Generator
+                Preview
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
+              {/* <div>
                 <label className="text-sm font-medium mb-2 block">Website URL</label>
                 <Input
                   type="url"
@@ -287,9 +389,9 @@ export default function MailIframeManager() {
               <Button onClick={generateIframe} className="w-full">
                 <Code className="h-4 w-4 mr-2" />
                 Generate Iframe
-              </Button>
+              </Button> */}
 
-              {generatedIframe && (
+              {/* {generatedIframe && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-medium">Generated Iframe Code</label>
@@ -300,7 +402,7 @@ export default function MailIframeManager() {
                   </div>
                   <Textarea value={generatedIframe} readOnly rows={3} className="font-mono text-sm" />
                 </div>
-              )}
+              )} */}
 
               {generatedIframe && (
                 <div className="space-y-2">
@@ -313,9 +415,6 @@ export default function MailIframeManager() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Location Generator Section */}
-        <LocationGenerator />
 
         {/* Console Section */}
         <Card>

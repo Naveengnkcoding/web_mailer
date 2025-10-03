@@ -46,43 +46,22 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-
-////Firebase
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, update} from "firebase/database";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDExD48FkQXTPknLHBinnU8EaQEZKxK7vE",
-  authDomain: "qsat-db.firebaseapp.com",
-  databaseURL: "https://qsat-db-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "qsat-db",
-  storageBucket: "qsat-db.firebasestorage.app",
-  messagingSenderId: "84227044871",
-  appId: "1:84227044871:web:7cbb1b0ca996e41c9f1ca2",
-  measurementId: "G-15N7Q273LC"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
-const dataRef = ref(database, 'data'); // e.g., 'users/user123'
+import { database } from "../app/api/firebaseConfig";
+import { ref, update } from "firebase/database"; 
+const dataRef = ref(database, 'data'); 
 
 // Helper function to generate a random number within a given range, including decimals
-const getRandomInRange = (min, max) => {
+const getRandomInRange = (min: number, max: number): number => {
   return Math.random() * (max - min) + min;
 };
 
 // Next.js component to generate and display random coordinates
 export default function RandomCoordinates() {
-  const [coordinates, setCoordinates] = useState({ lat: null, long: null });
+  const [coordinates, setCoordinates] = useState<{ lat: number | null; long: number | null }>({ lat: null, long: null });
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const intervalRef = useRef(null);
-  const intervalRef2 = useRef(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef2 = useRef<NodeJS.Timeout | null>(null);
 
   // useEffect hook to manage the timer
   useEffect(() => {
@@ -180,7 +159,7 @@ export default function RandomCoordinates() {
               **Latitude:** {coordinates.lat.toFixed(15)} 
             </p>
             <p>
-              **Longitude:** {coordinates.long.toFixed(15)}
+              **Longitude:** {coordinates.long !== null ? coordinates.long.toFixed(15) : "N/A"}
             </p>
           </>
         ) : (
