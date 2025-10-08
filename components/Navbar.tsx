@@ -11,6 +11,8 @@ const Navbar = () => {
           <Link href="/" className="hover:text-gray-300">Home</Link>
           <Link href="/firebase" className="hover:text-gray-300">Firebase</Link>
           <Link href="/tools" className="hover:text-gray-300">Tools</Link>
+          <Link href="/stream" className="hover:text-gray-300">Stream</Link>
+          <Link href="/mock" className="hover:text-gray-300">Mock</Link>
           <Button className="" size="sm" variant="outline">
             Login
           </Button>
