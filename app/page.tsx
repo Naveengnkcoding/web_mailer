@@ -62,6 +62,7 @@ export default function MailIframeManager() {
     ]
     setHtmlFiles(mockFiles)
   }, [])
+  // Removed redundant useEffect that referenced undefined 'files'
   // useEffect(() => {
   //   const htmlFileObjects: HtmlFile[] = files.map((file) => ({
   //     name: file,
