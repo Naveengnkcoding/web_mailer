@@ -72,17 +72,17 @@ export default function MailIframeManager() {
   //   setHtmlFiles(htmlFileObjects)
   // }, [])
 
-  useEffect(() => {
-    fetch("/api/list-html")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.files) {
-          setHtmlFiles(data.files);
-          console.log("Fetched HTML files:", data.files);
-        }
-      })
-      .catch((err) => console.error("Error fetching files:", err));
-  }, []);
+  // useEffect(() => {
+  //   fetch("/api/list-html")
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       if (data.files) {
+  //         setHtmlFiles(data.files);
+  //         console.log("Fetched HTML files:", data.files);
+  //       }
+  //     })
+  //     .catch((err) => console.error("Error fetching files:", err));
+  // }, []);
   // const transporter = nodemailer.createTransport({
   //     service: 'gmail', // You can use 'gmail' directly
   //     auth: {
